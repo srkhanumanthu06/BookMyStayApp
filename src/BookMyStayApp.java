@@ -1,4 +1,7 @@
-// Use Case 1 & 2: Application Entry + Room Types & Static Availability
+
+//Use Case 1, 2 & 3: Entry + Room Types + Centralized Inventory
+
+import java.util.HashMap;
 
 abstract class Room {
     String type;
@@ -36,6 +39,32 @@ class SuiteRoom extends Room {
     }
 }
 
+class RoomInventory {
+    private HashMap<String, Integer> availability;
+
+    RoomInventory() {
+        availability = new HashMap<>();
+        availability.put("Single Room", 5);
+        availability.put("Double Room", 3);
+        availability.put("Suite Room", 2);
+    }
+
+    int getAvailability(String roomType) {
+        return availability.getOrDefault(roomType, 0);
+    }
+
+    void updateAvailability(String roomType, int count) {
+        availability.put(roomType, count);
+    }
+
+    void displayInventory() {
+        System.out.println("===== Centralized Room Inventory =====\n");
+        for (String type : availability.keySet()) {
+            System.out.println(type + " -> Available: " + availability.get(type));
+        }
+    }
+}
+
 public class BookMyStayApp {
 
     public static void main(String[] args) {
@@ -48,26 +77,30 @@ public class BookMyStayApp {
         System.out.println("Version: 1.0");
         System.out.println("System started successfully!\n");
 
-        // UC2: Room Types & Availability
+        // UC2: Room Details
         Room single = new SingleRoom();
         Room doubleRoom = new DoubleRoom();
         Room suite = new SuiteRoom();
 
-        int singleAvailability = 5;
-        int doubleAvailability = 3;
-        int suiteAvailability = 2;
-
-        System.out.println("===== Room Availability =====\n");
+        System.out.println("===== Room Details =====\n");
 
         single.displayDetails();
-        System.out.println("Available: " + singleAvailability);
         System.out.println();
 
         doubleRoom.displayDetails();
-        System.out.println("Available: " + doubleAvailability);
         System.out.println();
 
         suite.displayDetails();
-        System.out.println("Available: " + suiteAvailability);
+        System.out.println();
+
+        // UC3: Inventory
+        RoomInventory inventory = new RoomInventory();
+
+        inventory.displayInventory();
+
+        inventory.updateAvailability("Single Room", 4);
+
+        System.out.println("\nAfter Update:\n");
+        inventory.displayInventory();
     }
 }
