@@ -117,7 +117,9 @@ class BookingService {
         return roomType.substring(0, 2).toUpperCase() + "-" + count;
     }
 
-    void processBookings(BookingQueue queue, RoomInventory inventory) {
+    void processBookings(BookingQueue queue,
+                         RoomInventory inventory,
+                         BookingHistory history) {
 
         System.out.println("\n===== Processing Bookings =====\n");
 
@@ -132,6 +134,8 @@ class BookingService {
                 String roomId = generateRoomId(r.roomType);
 
                 inventory.decrement(r.roomType);
+
+                history.add(r); // ✅ UC8: record confirmed booking
 
                 System.out.println("Booking Confirmed!");
                 System.out.println("Reservation ID: " + r.reservationId);
@@ -204,6 +208,49 @@ class AddOnServiceManager {
     }
 }
 
+// ---------- UC8: Booking History ----------
+class BookingHistory {
+
+    private List<Reservation> confirmedBookings = new ArrayList<>();
+
+    void add(Reservation r) {
+        confirmedBookings.add(r);
+    }
+
+    List<Reservation> getAllBookings() {
+        return confirmedBookings;
+    }
+
+    void displayAll() {
+        System.out.println("\n===== Booking History =====");
+        for (Reservation r : confirmedBookings) {
+            System.out.println("Reservation ID: " + r.reservationId +
+                    ", Guest: " + r.guestName +
+                    ", Room: " + r.roomType);
+        }
+    }
+}
+
+// ---------- UC8: Booking Report Service ----------
+class BookingReportService {
+
+    void generateSummary(BookingHistory history) {
+
+        System.out.println("\n===== Booking Summary Report =====");
+
+        Map<String, Integer> roomCount = new HashMap<>();
+
+        for (Reservation r : history.getAllBookings()) {
+            roomCount.put(r.roomType,
+                    roomCount.getOrDefault(r.roomType, 0) + 1);
+        }
+
+        for (String type : roomCount.keySet()) {
+            System.out.println(type + " booked: " + roomCount.get(type));
+        }
+    }
+}
+
 // ---------- Main ----------
 public class BookMyStayApp {
 
@@ -211,35 +258,37 @@ public class BookMyStayApp {
 
         System.out.println("===== Book My Stay App =====\n");
 
-        // UC2
+        // UC2: Room Setup
         Room[] rooms = {
                 new SingleRoom(),
                 new DoubleRoom(),
                 new SuiteRoom()
         };
 
-        // UC3
+        // UC3: Inventory
         RoomInventory inventory = new RoomInventory();
         inventory.displayInventory();
 
-        // UC4
+        // UC4: Search
         SearchService search = new SearchService();
         search.searchAvailableRooms(rooms, inventory);
 
-        // UC5
+        // UC5: Booking Queue
         BookingQueue queue = new BookingQueue();
         queue.addRequest(new Reservation("R1", "Alice", "Single Room"));
         queue.addRequest(new Reservation("R2", "Bob", "Single Room"));
         queue.addRequest(new Reservation("R3", "Charlie", "Single Room"));
         queue.addRequest(new Reservation("R4", "David", "Suite Room"));
 
-        // UC6
+        // UC8: Booking History
+        BookingHistory history = new BookingHistory();
+
+        // UC6: Process Bookings
         BookingService service = new BookingService();
-        service.processBookings(queue, inventory);
+        service.processBookings(queue, inventory, history);
 
-        // ---------- UC7 Usage ----------
+        // UC7: Add-On Services
         AddOnServiceManager addOnManager = new AddOnServiceManager();
-
         AddOnService breakfast = new AddOnService("Breakfast", 500);
         AddOnService spa = new AddOnService("Spa", 1500);
         AddOnService pickup = new AddOnService("Airport Pickup", 800);
@@ -253,9 +302,15 @@ public class BookMyStayApp {
 
         System.out.println("\nTotal Add-On Cost for R1: ₹" +
                 addOnManager.calculateTotalCost("R1"));
-
         System.out.println("Total Add-On Cost for R2: ₹" +
                 addOnManager.calculateTotalCost("R2"));
+
+        // UC8: Display Booking History
+        history.displayAll();
+
+        // UC8: Generate Report
+        BookingReportService reportService = new BookingReportService();
+        reportService.generateSummary(history);
 
         // Final Inventory
         System.out.println("\n===== Final Inventory =====");
